@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>가상 피팅 갤러리</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="animated-gradient-bg text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- 메인 컨테이너 -->
+    <div class="w-full max-w-7xl mx-auto text-center">
+        <!-- 페이지 제목 -->
+        <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-8 drop-shadow-md">
+            가상 피팅 갤러리
+        </h1>
+        <p class="text-lg text-gray-200 mb-6 max-w-2xl mx-auto">
+            저희 서비스와 함께 완성된 멋진 피팅 룩을 만나보세요!
+        </p>
+        
+        <!-- 가상 피팅 체험하기 드롭다운 메뉴 -->
+        <div class="dropdown inline-block mb-12">
+            <button id="dropdown-button" class="px-8 py-3 bg-indigo-600 text-white font-bold rounded-full shadow-lg hover:bg-indigo-700 transition-colors duration-300 transform hover:scale-105 focus:outline-none">
+                가상 피팅 체험하기
+            </button>
+            <div id="dropdown-menu" class="dropdown-menu">
+                <a href="ffiting.html" class="dropdown-item">이미지 모드</a>
+                <div class="divider"></div> <!-- 구분선 추가 -->
+                <a href="liveoverlay.html" class="dropdown-item">영상 모드</a>
+            </div>
+        </div>
+
+        <!-- 횡스크롤 갤러리 컨테이너 -->
+        <div id="gallery-container" class="gallery-container flex overflow-x-scroll py-4 space-x-6 px-2 md:px-4 lg:px-6 rounded-xl border-2 border-white shadow-xl bg-white min-h-[26rem] items-center">
+            <!-- JavaScript에 의해 동적으로 채워질 예정 -->
+        </div>
+    </div>
+
+    <script>
+        // 기존 스크립트 (드래그 스크롤, 드롭다운) ===================================
+        const slider = document.getElementById('gallery-container');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        const dropdownButton = document.getElementById('dropdown-button');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+
+        function toggleDropdown() {
+            dropdownMenu.classList.toggle('show');
+        }
+
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            slider.classList.add('active');
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+        slider.addEventListener('mouseleave', () => { isDown = false; slider.classList.remove('active'); });
+        slider.addEventListener('mouseup', () => { isDown = false; slider.classList.remove('active'); });
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 1;
+            slider.scrollLeft = scrollLeft - walk;
+        });
+        slider.addEventListener('touchstart', (e) => {
+            isDown = true;
+            startX = e.touches[0].clientX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+        slider.addEventListener('touchend', () => { isDown = false; });
+        slider.addEventListener('touchmove', (e) => {
+            if (!isDown) return;
+            const x = e.touches[0].clientX - slider.offsetLeft;
+            const walk = (x - startX) * 1;
+            slider.scrollLeft = scrollLeft - walk;
+        });
+
+        dropdownButton.addEventListener('click', toggleDropdown);
+
+        document.addEventListener('click', (event) => {
+            if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+
+        // 새로 추가된 스크립트 (갤러리 동적 로딩) ===============================
+        document.addEventListener('DOMContentLoaded', async () => {
+            const galleryContainer = document.getElementById('gallery-container');
+            
+            // "더보기" 버튼 HTML 구조를 변수로 저장
+            const moreButtonHTML = `
+                <div class="flex-shrink-0 relative w-64 h-96 flex items-center justify-center rounded-xl bg-gray-800 border-2 border-white shadow-lg p-6 group transition-colors duration-300 hover:bg-gray-700">
+                    <a href="clothes.html" class="flex flex-col items-center justify-center text-center text-white text-lg font-bold">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-2 text-indigo-400 group-hover:text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        더 많은 의상 보기
+                    </a>
+                </div>`;
+
+            try {
+                galleryContainer.innerHTML = '<p class="text-gray-600 text-lg">갤러리 로딩 중...</p>';
+                galleryContainer.style.justifyContent = 'center';
+
+                const response = await fetch('/api/get_result_images');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const imagePaths = await response.json();
+
+                // 갤러리 비우기
+                galleryContainer.innerHTML = ''; 
+                galleryContainer.style.justifyContent = 'flex-start';
+
+                if (imagePaths.length === 0) {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'w-full text-center';
+                    placeholder.innerHTML = '<p class="text-gray-600 text-lg">아직 생성된 가상 피팅 이미지가 없습니다. 먼저 피팅을 체험해보세요!</p>';
+                    galleryContainer.style.justifyContent = 'center';
+                    galleryContainer.appendChild(placeholder);
+                } else {
+                    imagePaths.forEach(path => {
+                        const galleryItem = document.createElement('div');
+                        galleryItem.className = 'flex-shrink-0 relative w-64 h-96 rounded-xl overflow-hidden group shadow-lg border-2 border-white';
+                        
+                        const img = document.createElement('img');
+                        img.src = path;
+                        img.alt = '가상 피팅 이미지';
+                        img.className = 'w-full h-full object-cover transition-transform duration-300 ease-in-out transform group-hover:scale-105';
+                        
+                        const overlay = document.createElement('div');
+                        overlay.className = 'absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent opacity-80';
+
+                        galleryItem.appendChild(img);
+                        galleryItem.appendChild(overlay);
+                        galleryContainer.appendChild(galleryItem);
+                    });
+                }
+                // "더보기" 버튼을 항상 마지막에 추가
+                galleryContainer.insertAdjacentHTML('beforeend', moreButtonHTML);
+
+            } catch (error) {
+                console.error('Error fetching result images:', error);
+                galleryContainer.innerHTML = '<p class="text-red-500">갤러리를 불러오는 데 실패했습니다.</p>';
+                galleryContainer.style.justifyContent = 'center';
+            }
+        });
+    </script>
+</body>
+</html>

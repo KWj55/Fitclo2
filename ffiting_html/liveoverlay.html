@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영상 모드 가상 피팅</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="animated-gradient-bg text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-6xl mx-auto bg-white bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-2xl shadow-2xl p-6 md:p-10 text-center flex flex-col relative">
+        <!-- 메인으로 돌아가기 버튼 -->
+        <div class="absolute top-6 left-6 flex space-x-4 z-20">
+            <a href="main.html" class="px-4 py-2 bg-gray-600 text-white font-bold rounded-full shadow-lg hover:bg-gray-700 transition-colors duration-300 transform hover:scale-105">
+                메인으로
+            </a>
+            <a href="ffiting.html" class="px-4 py-2 bg-teal-600 text-white font-bold rounded-full shadow-lg hover:bg-teal-700 transition-colors duration-300 transform hover:scale-105">
+                이미지 모드로
+            </a>
+        </div>
+        
+        <!-- 페이지 제목 -->
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4 drop-shadow-md">
+            영상 모드 가상 피팅
+        </h1>
+        <p class="text-base text-gray-200 mb-4 max-w-md mx-auto">
+            웹캠을 통해 실시간으로 의상을 착용해 보세요.
+        </p>
+
+        <!-- 메인 컨텐츠 그리드 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-10 items-start flex-grow">
+            <!-- 왼쪽 UI 섹션 (의상 선택) -->
+            <div class="md:col-span-1 flex flex-col space-y-6">
+                <!-- 이 섹션은 이제 사용하지 않음 -->
+            </div>
+
+            <!-- 오른쪽 영상 및 오버레이 섹션 -->
+            <div class="md:col-span-4 w-full h-full">
+                <div class="relative w-full h-full aspect-video bg-gray-900 bg-opacity-20 rounded-xl shadow-inner border border-gray-300 flex justify-center items-center text-gray-400 p-4">
+                    <!-- 웹캠 영상이 표시될 영역 -->
+                    <video id="webcam-video" class="w-full h-full object-cover rounded-xl hidden"></video>
+                    <!-- 오버레이될 캔버스 -->
+                    <canvas id="overlay-canvas" class="absolute inset-0 w-full h-full"></canvas>
+                    <span id="video-status" class="text-sm">웹캠을 활성화하고 있습니다...</span>
+                    
+                    <!-- 웹캠 컨트롤 버튼을 내부 하단으로 이동 -->
+                    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex justify-center space-x-4 z-10">
+                        <button id="start-button" class="px-8 py-3 bg-green-600 text-white font-bold rounded-full shadow-lg hover:bg-green-700 transition-colors duration-300 transform hover:scale-105">
+                            웹캠 시작
+                        </button>
+                        <button id="stop-button" class="px-8 py-3 bg-red-600 text-white font-bold rounded-full shadow-lg hover:bg-red-700 transition-colors duration-300 transform hover:scale-105" disabled>
+                            웹캠 중지
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 하단 컨트롤 섹션 -->
+        <div class="mt-8 flex flex-col items-center w-full">
+            <!-- 의상 스크롤 리스트 컨테이너 (새로운 박스) -->
+            <div class="relative w-full bg-white bg-opacity-20 rounded-xl p-4 mb-8 shadow-inner">
+                <!-- 필터 버튼 추가 -->
+                <button id="filter-button" class="absolute -top-4 left-4 p-2 bg-white bg-opacity-30 rounded-full hover:bg-opacity-40 transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zM3 16a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" />
+                    </svg>
+                </button>
+                <h2 class="text-lg font-bold my-2">의상 선택</h2>
+                <div id="clothing-list-container" class="flex overflow-x-scroll clothing-list space-x-4 p-2">
+                    <!-- 의상 이미지 아이템 (예시 데이터) -->
+                    <!-- 모든 의상 데이터를 배열로 정의하여 동적으로 렌더링 -->
+                </div>
+            </div>
+
+            <!-- 웹캠 컨트롤 버튼 (기존 위치는 이제 사용하지 않음) -->
+            <div></div>
+        </div>
+    </div>
+
+    <!-- 필터 모달 -->
+    <div id="filter-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-sm">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">필터</h3>
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button class="filter-item px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition-colors duration-200" data-category="All">전체</button>
+                <button class="filter-item px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition-colors duration-200" data-category="Top">상의</button>
+                <button class="filter-item px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition-colors duration-200" data-category="Pants">하의</button>
+                <button class="filter-item px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition-colors duration-200" data-category="Dress">원피스</button>
+                <button class="filter-item px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition-colors duration-200" data-category="Outer">아우터</button>
+            </div>
+            <button id="close-modal-button" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-colors duration-300">
+                닫기
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam-video');
+        const canvas = document.getElementById('overlay-canvas');
+        const statusText = document.getElementById('video-status');
+        const startButton = document.getElementById('start-button');
+        const stopButton = document.getElementById('stop-button');
+        const clothingListContainer = document.getElementById('clothing-list-container');
+        const filterButton = document.getElementById('filter-button');
+        const filterModal = document.getElementById('filter-modal');
+        const closeModalButton = document.getElementById('close-modal-button');
+        const filterItems = document.querySelectorAll('.filter-item');
+        let stream = null;
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        // 의상 데이터 (필터링을 위해 카테고리 정보 추가)
+        const clothingItems = [
+            { id: 1, category: 'Top', name: '이미지 1', src: 'https://placehold.co/200x200/4B5563/FFFFFF?text=이미지+1' },
+            { id: 2, category: 'Outer', name: '이미지 2', src: 'https://placehold.co/200x200/6B7280/FFFFFF?text=이미지+2' },
+            { id: 3, category: 'Dress', name: '이미지 3', src: 'https://placehold.co/200x200/374151/FFFFFF?text=이미지+3' },
+            { id: 4, category: 'Top', name: '이미지 4', src: 'https://placehold.co/200x200/4B5563/FFFFFF?text=이미지+4' },
+            { id: 5, category: 'Pants', name: '이미지 5', src: 'https://placehold.co/200x200/6B7280/FFFFFF?text=이미지+5' },
+            { id: 6, category: 'Dress', name: '이미지 6', src: 'https://placehold.co/200x200/374151/FFFFFF?text=이미지+6' },
+            { id: 7, category: 'Outer', name: '이미지 7', src: 'https://placehold.co/200x200/4B5563/FFFFFF?text=이미지+7' },
+            { id: 8, category: 'Pants', name: '이미지 8', src: 'https://placehold.co/200x200/6B7280/FFFFFF?text=이미지+8' },
+            { id: 9, category: 'Top', name: '이미지 9', src: 'https://placehold.co/200x200/374151/FFFFFF?text=이미지+9' },
+            { id: 10, category: 'Dress', name: '이미지 10', src: 'https://placehold.co/200x200/4B5563/FFFFFF?text=이미지+10' },
+            { id: 11, category: 'Outer', name: '이미지 11', src: 'https://placehold.co/200x200/6B7280/FFFFFF?text=이미지+11' },
+            { id: 12, category: 'Top', name: '이미지 12', src: 'https://placehold.co/200x200/374151/FFFFFF?text=이미지+12' },
+            { id: 13, category: 'Pants', name: '이미지 13', src: 'https://placehold.co/200x200/4B5563/FFFFFF?text=이미지+13' },
+            { id: 14, category: 'Dress', name: '이미지 14', src: 'https://placehold.co/200x200/6B7280/FFFFFF?text=이미지+14' },
+            { id: 15, category: 'Outer', name: '이미지 15', src: 'https://placehold.co/200x200/374151/FFFFFF?text=이미지+15' },
+        ];
+
+        // 의상 리스트 렌더링 함수
+        function renderClothingList(category = 'All') {
+            clothingListContainer.innerHTML = ''; // 기존 리스트 비우기
+            const filteredItems = category === 'All' ? clothingItems : clothingItems.filter(item => item.category === category);
+            
+            filteredItems.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('flex-shrink-0', 'w-24', 'h-24', 'rounded-lg', 'bg-white', 'bg-opacity-20', 'hover:bg-opacity-30', 'transition-colors', 'duration-200', 'cursor-pointer', 'clothing-item');
+                itemDiv.innerHTML = `<img src="${item.src}" alt="${item.name}" class="w-full h-full object-cover rounded-lg">`;
+                clothingListContainer.appendChild(itemDiv);
+            });
+        }
+        
+        // 페이지 로드 시 전체 의상 리스트 렌더링
+        window.addEventListener('DOMContentLoaded', () => {
+            renderClothingList('All');
+        });
+
+        // 웹캠 스트림 시작 함수
+        async function startWebcam() {
+            statusText.textContent = '웹캠을 활성화하고 있습니다...';
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play();
+                    video.classList.remove('hidden');
+                    statusText.classList.add('hidden');
+                    startButton.disabled = true;
+                    stopButton.disabled = false;
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                };
+            } catch (err) {
+                console.error("웹캠 접근 오류: ", err);
+                statusText.textContent = '웹캠을 사용할 수 없습니다. 권한을 확인해주세요.';
+            }
+        }
+
+        // 웹캠 스트림 중지 함수
+        function stopWebcam() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                video.classList.add('hidden');
+                statusText.classList.remove('hidden');
+                statusText.textContent = '웹캠이 중지되었습니다.';
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            }
+        }
+
+        // 의상 리스트 드래그 스크롤 로직
+        clothingListContainer.addEventListener('mousedown', (e) => {
+            isDown = true;
+            clothingListContainer.classList.add('active');
+            startX = e.pageX - clothingListContainer.offsetLeft;
+            scrollLeft = clothingListContainer.scrollLeft;
+        });
+        clothingListContainer.addEventListener('mouseleave', () => {
+            isDown = false;
+            clothingListContainer.classList.remove('active');
+        });
+        clothingListContainer.addEventListener('mouseup', (e) => {
+            isDown = false;
+            clothingListContainer.classList.remove('active');
+        });
+        clothingListContainer.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - clothingListContainer.offsetLeft;
+            const walk = (x - startX) * 1;
+            clothingListContainer.scrollLeft = scrollLeft - walk;
+        });
+        clothingListContainer.addEventListener('touchstart', (e) => {
+            isDown = true;
+            startX = e.touches[0].clientX - clothingListContainer.offsetLeft;
+            scrollLeft = clothingListContainer.scrollLeft;
+        });
+        clothingListContainer.addEventListener('touchend', () => {
+            isDown = false;
+        });
+        clothingListContainer.addEventListener('touchmove', (e) => {
+            if (!isDown) return;
+            const x = e.touches[0].clientX - clothingListContainer.offsetLeft;
+            const walk = (x - startX) * 1;
+            clothingListContainer.scrollLeft = scrollLeft - walk;
+        });
+
+        // 필터 모달 기능
+        filterButton.addEventListener('click', () => {
+            filterModal.classList.remove('hidden');
+        });
+        closeModalButton.addEventListener('click', () => {
+            filterModal.classList.add('hidden');
+        });
+        filterItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const category = item.dataset.category;
+                renderClothingList(category);
+                filterModal.classList.add('hidden');
+            });
+        });
+
+        // 버튼 이벤트 리스너
+        startButton.addEventListener('click', startWebcam);
+        stopButton.addEventListener('click', stopWebcam);
+    </script>
+</body>
+</html>

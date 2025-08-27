@@ -1,0 +1,159 @@
+/* 애니메이션 배경 스타일 */
+@keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.animated-gradient-bg {
+    background: linear-gradient(-45deg, #1e3a8a, #4f46e5, #9333ea, #db2777, #f97316, #fde047);
+    background-size: 400% 400%;
+    animation: gradient-animation 15s ease infinite;
+}
+
+/* 폰트 설정 및 사용자 선택 방지 */
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* main.html specific styles */
+/* 커스텀 스크롤바 스타일링: 스크롤바를 숨깁니다 */
+.gallery-container::-webkit-scrollbar {
+    height: 0; /* Webkit 기반 브라우저 (Chrome, Safari) */
+}
+
+.gallery-container {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+    cursor: grab; /* 드래그 가능한 상태임을 시각적으로 표시 */
+}
+
+.gallery-container.active {
+    cursor: grabbing; /* 드래그 중인 상태임을 표시 */
+}
+
+/* 드롭다운 메뉴 스타일 */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    width: 180px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    opacity: 0;
+    visibility: hidden;
+    transform-origin: top;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+}
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+}
+.dropdown-item {
+    display: block;
+    padding: 8px 16px; /* 높이를 조금 줄임 */
+    font-weight: 500;
+    color: #374151;
+    transition: background-color 0.2s ease-in-out;
+    cursor: pointer;
+}
+.dropdown-item:first-child {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+.dropdown-item:last-child {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+.dropdown-item:hover {
+    background-color: #f3f4f6;
+}
+/* 구분선 스타일 */
+.divider {
+    height: 2px;
+    background-color: #e5e7eb;
+    margin: 0 16px;
+}
+
+/* ffitting.html specific styles */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+.animate-spin-slow {
+    animation: spin 1s linear infinite;
+}
+
+/* 기본 레이아웃: 가로가 긴 화면 */
+.main-container {
+    display: flex;
+    flex-direction: row;
+}
+.upload-section {
+    flex-direction: column;
+}
+.result-section {
+    flex-grow: 1;
+}
+
+/* 세로 비율이 더 높은 화면 (모바일, 좁은 창) */
+@media (max-aspect-ratio: 1/1) {
+    .main-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    .upload-section {
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+    .upload-item {
+        width: 48%; /* 너비를 48%로 설정하여 안정적인 간격 유지 */
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    .result-section {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* liveoverlay.html specific styles */
+/* 의상 리스트 스크롤바 숨기기 */
+.clothing-list::-webkit-scrollbar {
+    height: 0;
+}
+.clothing-list {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.clothing-list-container {
+    cursor: grab;
+}
+.clothing-list-container.active {
+    cursor: grabbing;
+}
+/* 의상 아이템 선택 방지 */
+.clothing-item {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

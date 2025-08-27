@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이미지 모드 가상 피팅</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 스크롤바 숨기기 및 드래그 커서 스타일 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;     /* Firefox */
+        }
+        .draggable-scroll { cursor: grab; }
+        .draggable-scroll.active { cursor: grabbing; }
+    </style>
+</head>
+<body class="animated-gradient-bg text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-6xl mx-auto bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-2xl shadow-2xl p-6 md:p-10 text-center flex flex-col relative">
+        <!-- 상단 버튼 그룹 -->
+        <div class="absolute top-6 left-6 flex space-x-4 z-20">
+            <a href="main.html" class="px-4 py-2 bg-gray-600 text-white font-bold rounded-full shadow-lg hover:bg-gray-700 transition-colors duration-300 transform hover:scale-105">
+                메인으로
+            </a>
+            <a href="liveoverlay.html" class="px-4 py-2 bg-teal-600 text-white font-bold rounded-full shadow-lg hover:bg-teal-700 transition-colors duration-300 transform hover:scale-105">
+                영상 모드로
+            </a>
+        </div>
+
+        <!-- 페이지 제목 -->
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4 drop-shadow-md pt-12">
+            이미지 모드 가상 피팅
+        </h1>
+
+        <!-- 위젯들이 제거된 영역 -->
+        <div class="flex justify-evenly items-stretch h-80">
+            <!-- 인물 이미지 -->
+            <div id="person-image-widget" class="w-1/4 bg-white bg-opacity-20 rounded-xl p-2 cursor-pointer hover:bg-opacity-30 transition-all">
+                <div class="w-full h-full bg-gray-900 bg-opacity-20 rounded-xl shadow-inner flex items-center justify-center text-gray-400 text-center relative overflow-hidden pointer-events-none">
+                    <img id="selected-person-image" src="" alt="선택된 인물" class="hidden w-full h-full object-cover">
+                    <span id="person-image-placeholder">인물 이미지<br><span class="text-xs">(클릭시 선택 가능)</span></span>
+                </div>
+            </div>
+            <!-- 의상 이미지 -->
+            <div id="clothing-image-widget" class="w-1/4 bg-white bg-opacity-20 rounded-xl p-2 cursor-pointer hover:bg-opacity-30 transition-all">
+                <div class="w-full h-full bg-gray-900 bg-opacity-20 rounded-xl shadow-inner flex items-center justify-center text-gray-400 text-center relative overflow-hidden pointer-events-none">
+                    <img id="selected-clothing-image" src="" alt="선택된 의상" class="hidden w-full h-full object-cover">
+                    <span id="clothing-image-placeholder">의상 이미지<br><span class="text-xs">(클릭시 선택 가능)</span></span>
+                </div>
+            </div>
+            <!-- 결과 이미지 -->
+            <div id="result-image-container" class="w-1/4 bg-white bg-opacity-20 rounded-xl p-2">
+                <div class="w-full h-full bg-gray-900 bg-opacity-20 rounded-xl shadow-inner flex items-center justify-center text-gray-400">
+                    <span>결과 이미지</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 가로 스크롤바 위젯 -->
+        <div id="selection-bar" class="w-full bg-white bg-opacity-20 rounded-xl p-4 mt-8 shadow-inner h-44 flex items-center justify-center">
+            <p id="selection-bar-placeholder" class="text-gray-400">상단의 인물 또는 의상 이미지를 클릭하여 항목을 선택하세요.</p>
+        </div>
+
+        <!-- 하단 버튼 섹션 -->
+        <div class="mt-8">
+            <button id="start-fitting-button" class="px-8 py-3 bg-indigo-600 text-white font-bold rounded-full shadow-lg hover:bg-indigo-700 transition-colors duration-300 transform hover:scale-105">
+                가상피팅하기
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const startFittingButton = document.getElementById('start-fitting-button');
+        const selectedPersonImage = document.getElementById('selected-person-image');
+        const selectedClothingImage = document.getElementById('selected-clothing-image');
+        const resultContainer = document.getElementById('result-image-container').querySelector('div');
+
+        if (startFittingButton) {
+            startFittingButton.addEventListener('click', async () => {
+                console.log("가상피팅하기 버튼 클릭됨. 피팅 프로세스 시작.");
+
+                const personImageSrc = selectedPersonImage.src;
+                const clothImageSrc = selectedClothingImage.src;
+
+                if (!personImageSrc || personImageSrc.endsWith('/')) {
+                    alert('인물 이미지를 먼저 선택해주세요.');
+                    return;
+                }
+                if (!clothImageSrc || clothImageSrc.endsWith('/')) {
+                    alert('의상 이미지를 먼저 선택해주세요.');
+                    return;
+                }
+
+                resultContainer.innerHTML = '<span class="text-white">가상 피팅 진행 중...</span>';
+                startFittingButton.disabled = true;
+                startFittingButton.textContent = '처리 중...';
+
+                try {
+                    const personImagePath = new URL(personImageSrc).pathname;
+                    const clothImagePath = new URL(clothImageSrc).pathname;
+
+                    const response = await fetch('/api/fitting', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            person_image: personImagePath,
+                            cloth_image: clothImagePath,
+                        }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        resultContainer.innerHTML = `<img src="${data.result_image_url}" alt="가상 피팅 결과" class="w-full h-full object-cover">`;
+                    } else {
+                        console.error('Fitting failed:', data.error);
+                        resultContainer.innerHTML = `<span class="text-red-400">오류: ${data.error}</span>`;
+                    }
+                } catch (error) {
+                    console.error('피팅 프로세스 중 오류 발생:', error);
+                    resultContainer.innerHTML = '<span class="text-red-400">요청에 실패했습니다. 브라우저 콘솔을 확인해주세요.</span>';
+                } finally {
+                    startFittingButton.disabled = false;
+                    startFittingButton.textContent = '가상피팅하기';
+                }
+            });
+        }
+
+        const personImageWidget = document.getElementById('person-image-widget');
+        const clothingImageWidget = document.getElementById('clothing-image-widget');
+        const selectionBar = document.getElementById('selection-bar');
+        const personImagePlaceholder = document.getElementById('person-image-placeholder');
+        const clothingImagePlaceholder = document.getElementById('clothing-image-placeholder');
+
+        function applyHorizontalDragToScroll(container) {
+            if (!container) return;
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+            container.addEventListener('mousedown', (e) => {
+                isDown = true;
+                container.classList.add('active');
+                startX = e.pageX - container.offsetLeft;
+                scrollLeft = container.scrollLeft;
+            });
+            container.addEventListener('mouseleave', () => { isDown = false; container.classList.remove('active'); });
+            container.addEventListener('mouseup', () => { isDown = false; container.classList.remove('active'); });
+            container.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - container.offsetLeft;
+                const walk = (x - startX);
+                container.scrollLeft = scrollLeft - walk;
+            });
+        }
+
+        async function populateSelectionBar(type) {
+            selectionBar.innerHTML = '';
+            selectionBar.classList.remove('justify-center');
+            selectionBar.classList.add('justify-start', 'overflow-x-auto', 'space-x-4', 'no-scrollbar', 'draggable-scroll');
+
+            try {
+                const response = await fetch(`/api/get_image_list?type=${type}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const imagePaths = await response.json();
+
+                if (imagePaths.length === 0) {
+                    selectionBar.innerHTML = '<p class="text-gray-400">표시할 이미지가 없습니다.</p>';
+                } else {
+                    imagePaths.forEach(path => {
+                        const itemButton = document.createElement('button');
+                        itemButton.className = 'flex-shrink-0 w-32 h-full bg-gray-700 hover:bg-gray-600 rounded-xl flex items-center justify-center overflow-hidden';
+                        const img = document.createElement('img');
+                        img.src = path;
+                        img.alt = path.split('/').pop();
+                        img.className = 'w-full h-full object-cover';
+                        itemButton.appendChild(img);
+
+                        itemButton.addEventListener('click', () => {
+                            if (type === 'person') {
+                                selectedPersonImage.src = path;
+                                selectedPersonImage.classList.remove('hidden');
+                                personImagePlaceholder.classList.add('hidden');
+                            } else if (type === 'clothing') {
+                                selectedClothingImage.src = path;
+                                selectedClothingImage.classList.remove('hidden');
+                                clothingImagePlaceholder.classList.add('hidden');
+                            }
+                        });
+                        selectionBar.appendChild(itemButton);
+                    });
+                }
+            } catch (error) {
+                const typeName = type === 'person' ? '인물' : '의상';
+                console.error(`Error fetching ${type} images:`, error);
+                selectionBar.innerHTML = `<p class="text-red-400">${typeName} 이미지 목록을 불러오는 데 실패했습니다.</p>`;
+            }
+            applyHorizontalDragToScroll(selectionBar);
+        }
+
+        if (personImageWidget) {
+            personImageWidget.addEventListener('click', () => populateSelectionBar('person'));
+        }
+
+        if (clothingImageWidget) {
+            clothingImageWidget.addEventListener('click', () => populateSelectionBar('clothing'));
+        }
+    </script>
+</body>
+</html>

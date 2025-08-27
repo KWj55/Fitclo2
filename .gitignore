@@ -1,0 +1,25 @@
+__pycache__
+model/__pycache__
+model/DensePose/__pycache__
+model/SCHP/__pycache__
+model/SCHP/*/__pycache__
+resource/demo/output
+resource/demo/example/.DS_Store
+Models
+Datasets
+densepose_
+.vscode
+playground.py
+output
+model/cloth_masker_segformer.py
+
+# Generated files and debug scripts
+images/result/
+run_app_cpu.py
+run_app_debug.py
+
+# Ignore all .DS_Store files
+**/.DS_Store
+
+# Ignore large data files
+catvton.tar.gz
